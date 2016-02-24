@@ -1,0 +1,119 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Hit Counter - Client</title>
+<!--    <script src="Scripts/jquery-1.6.4.min.js"></script>-->
+    <script src="https://code.jquery.com/jquery-2.2.1.min.js"></script>
+
+    <script src="Scripts/jquery.signalR-2.2.0.min.js"></script>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-3">
+            <h3>Voting Buttons</h3>
+            <hr />
+            <div id="votingSection">
+                <div id="upvoteButton">
+                    <i class="glyphicon glyphicon-thumbs-up"></i>
+                </div>
+                <div id="downVoteButton">
+                    <i class="glyphicon glyphicon-thumbs-down"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <h3>The graph</h3>
+            <hr />
+            <div id="votesGraph">
+                <div id="curve_chart" style="width: 100%;height: 500px"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+<script>
+    var connection = [];
+    var votesHub = [];
+    var chartData = [];
+
+    $(document).ready(function () {
+        //setup the connection and hub
+        connection = $.hubConnection();
+        votesHub = connection.createHubProxy('votesHub');
+        connection.start();
+        
+        //setup listner
+        votesHub.on('onNewBroadcastMessageReceived', function (result) {
+            if (chartData.length > 10) {
+                //chartData.shift();
+            }
+            chartData.push(
+                [new Date(result.TimeStamp), parseInt(result.VoteCount)]
+            );
+            ShowResults();
+        });
+    });
+
+
+    $(document).on("click", ".glyphicon", function() {
+        var reaction = $(this).hasClass("glyphicon-thumbs-up");
+        votesHub.invoke("Vote", reaction);
+    });
+
+    /*  Graph
+    ***************************************************/
+    google.charts.load('current', { 'packages': ['corechart'] });
+
+    function ShowResults() {
+        var data = new google.visualization.DataTable();
+        data.addColumn('datetime', 'Timestamp');
+        data.addColumn('number', 'votes');
+        data.addRows(chartData);
+
+
+        var options = {
+            title: 'Votes vs. Time'
+        };
+
+        var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+        chart.draw(data, options);
+    }
+
+</script>
+
+
+
+
+<style>
+    #hit-count {
+        font-size: 20px;
+        font-family: Verdana;
+        font-weight: 700;
+    }
+
+
+    .glyphicon {
+        font-size: 30px;
+        float: left;
+        display: inline-block;
+        margin-right: 10px;
+    }
+</style>
+
+</body>
+</html>
